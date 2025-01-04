@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor de Video Oscuro</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        
+        header {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            padding: 1rem;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.7));
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #e0e0e0;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            background-color: #000000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #videoPlayer {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+        .video-container:hover .controls {
+            opacity: 1;
+        }
+        .controls button {
+            background-color: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: background-color 0.3s ease;
+        }
+        .controls button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        #volumeControl {
+            width: 80px;
+            margin: 0 10px;
+        }
+        #progressBar {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+        #progress {
+            width: 0;
+            height: 100%;
+            background-color: #ff0000;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="https://nardvid.netlify.app" target="_blank">
+        <img src="logo.png" alt="NardVid Logo" class="logo"></a>
+    </header>
+    <div class="container">
+        <h1>Reproductor de Video</h1>
+        
+        <div class="video-container">
+            <video id="videoPlayer" src="vid/video1.mp4">
+                Tu navegador no soporta el elemento de video.
+            </video>
+            <div id="progressBar">
+                <div id="progress"></div>
+            </div>
+            <div class="controls">
+                <button id="playPauseBtn">Play</button>
+                <button id="rewindBtn">-10s</button>
+                <button id="forwardBtn">+10s</button>
+                <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+                <button id="fullscreenBtn">Pantalla Completa</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const rewindBtn = document.getElementById('rewindBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
+        const volumeControl = document.getElementById('volumeControl');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+
+        playPauseBtn.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+                playPauseBtn.textContent = 'Pause';
+            } else {
+                videoPlayer.pause();
+                playPauseBtn.textContent = 'Play';
+            }
+        });
+
+        rewindBtn.addEventListener('click', () => {
+            videoPlayer.currentTime -= 10;
+        });
+
+        forwardBtn.addEventListener('click', () => {
+            videoPlayer.currentTime += 10;
+        });
+
+        volumeControl.addEventListener('input', () => {
+            videoPlayer.volume = volumeControl.value;
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (videoPlayer.requestFullscreen) {
+                videoPlayer.requestFullscreen();
+            } else if (videoPlayer.mozRequestFullScreen) {
+                videoPlayer.mozRequestFullScreen();
+            } else if (videoPlayer.webkitRequestFullscreen) {
+                videoPlayer.webkitRequestFullscreen();
+            } else if (videoPlayer.msRequestFullscreen) {
+                videoPlayer.msRequestFullscreen();
+            }
+        });
+
+        videoPlayer.addEventListener('timeupdate', () => {
+            const percentage = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            progress.style.width = `${percentage}%`;
+        });
+
+        progressBar.addEventListener('click', (e) => {
+            const pos = (e.pageX - progressBar.offsetLeft) / progressBar.offsetWidth;
+            videoPlayer.currentTime = pos * videoPlayer.duration;
+        });
+
+        // Ocultar controles después de 3 segundos de inactividad
+        let timeout;
+        const controls = document.querySelector('.controls');
+        
+        function hideControls() {
+            controls.style.opacity = '0';
+        }
+
+        function showControls() {
+            controls.style.opacity = '1';
+            clearTimeout(timeout);
+            timeout = setTimeout(hideControls, 3000);
+        }
+
+        videoPlayer.addEventListener('mousemove', showControls);
+        controls.addEventListener('mousemove', showControls);
+        videoPlayer.addEventListener('mouseout', () => {
+            timeout = setTimeout(hideControls, 3000);
+        });
+    </script>
+</body>
+</html>
